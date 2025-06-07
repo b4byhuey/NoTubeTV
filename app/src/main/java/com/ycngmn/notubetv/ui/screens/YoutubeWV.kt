@@ -12,15 +12,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.multiplatform.webview.web.LoadingState
 import com.multiplatform.webview.web.WebView
 import com.multiplatform.webview.web.rememberWebViewNavigator
 import com.multiplatform.webview.web.rememberWebViewState
 import com.ycngmn.notubetv.R
+import com.ycngmn.notubetv.ui.MainViewModel
 import com.ycngmn.notubetv.ui.components.UpdateDialog
 import com.ycngmn.notubetv.utils.ExitBridge
 import com.ycngmn.notubetv.utils.NetworkBridge
-import com.ycngmn.notubetv.utils.ReleaseData
 import com.ycngmn.notubetv.utils.fetchScripts
 import com.ycngmn.notubetv.utils.getUpdate
 import com.ycngmn.notubetv.utils.permissionHandlerChrome
@@ -28,7 +29,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 @Composable
-fun YoutubeWV() {
+fun YoutubeWV(youtubeVM: MainViewModel = viewModel()) {
 
     val context = LocalContext.current
     val activity = context as Activity
@@ -36,9 +37,10 @@ fun YoutubeWV() {
     val state = rememberWebViewState("https://www.youtube.com/tv")
     val navigator = rememberWebViewNavigator()
 
-    val shouldFetch = remember { mutableStateOf(false) }
-    val updateData = remember { mutableStateOf<ReleaseData?>(null) }
+    val jsScript = youtubeVM.scriptData
+    val updateData = youtubeVM.updateData
 
+    val loadingState = state.loadingState
     val exitTrigger = remember { mutableStateOf(false) }
 
     // Translate native back-presses to 'escape' button press
@@ -51,31 +53,21 @@ fun YoutubeWV() {
         else exitTrigger.value = true
     }
 
-    // Check if the scripts already has been applied.
-    LaunchedEffect(state.loadingState) {
-        if (state.loadingState == LoadingState.Finished) {
-            navigator.evaluateJavaScript("(() => { return window.modernUI != null; })()") {
-               shouldFetch.value = (it == "false")
-            }
-        }
-    }
-
-    // Fetch and apply scripts and updates at launch from Github
-    LaunchedEffect(shouldFetch.value) {
-        if (!shouldFetch.value) return@LaunchedEffect
-
+    // Fetch scripts and updates at launch
+    LaunchedEffect(Unit) {
         val fetchedScripts = withContext(Dispatchers.IO) { fetchScripts() }
-        navigator.evaluateJavaScript(fetchedScripts)
-
+        youtubeVM.setScript(fetchedScripts)
         withContext(Dispatchers.IO) {
             getUpdate(context, navigator) { update ->
-                if (update != null) updateData.value = update
+                if (update != null) youtubeVM.setUpdate(update)
             }
         }
     }
-    
+
+    if (loadingState == LoadingState.Finished && jsScript != null)
+        navigator.evaluateJavaScript(jsScript)
     // If any update found, show the dialog.
-    if (updateData.value != null) UpdateDialog(updateData.value!!, navigator)
+    if (updateData != null) UpdateDialog(updateData, navigator)
     // If exit button is pressed, 'finish the activity' aka 'exit the app'.
     if (exitTrigger.value) activity.finish()
 
@@ -105,7 +97,8 @@ fun YoutubeWV() {
             cookieManager.flush()
 
             state.webSettings.apply {
-                // This user agent provides native like experience .
+                // This user agent provides native like experience.
+                // "PS4" for 4K. "Wired" for previews.
                 customUserAgentString = "Mozilla/5.0 Cobalt/25 (Sony, PS4, Wired)"
                 isJavaScriptEnabled = true
 

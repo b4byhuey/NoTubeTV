@@ -4,7 +4,7 @@ import android.content.Context
 import com.multiplatform.webview.web.WebViewNavigator
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.engine.cio.CIO
+import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.request.get
 import org.json.JSONObject
 
@@ -16,7 +16,7 @@ data class ReleaseData (
 
 suspend fun fetchUpdate() : ReleaseData {
     val fetchUrl = "https://api.github.com/repos/ycngmn/notubetv/releases/latest"
-    val client = HttpClient(CIO)
+    val client = HttpClient(OkHttp)
     val req = client.get(fetchUrl)
     val res = JSONObject(req.body() as String)
 

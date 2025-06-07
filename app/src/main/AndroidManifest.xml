@@ -22,13 +22,11 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:hardwareAccelerated="true"
-        android:usesCleartextTraffic="true"
         android:theme="@style/Theme.NoTubeTV">
 
 
         <activity
             android:name=".MainActivity"
-            android:usesCleartextTraffic="true"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

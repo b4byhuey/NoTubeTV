@@ -5,8 +5,8 @@ kotlin = "2.0.21"
 coreKtx = "1.16.0"
 appcompat = "1.7.0"
 composeBom = "2025.05.01"
-ktorClientCio = "2.3.4"
 ktorClientCore = "2.3.4"
+ktorClientOkhttpVersion = "2.3.12"
 lifecycleViewmodelCompose = "2.9.0"
 tvFoundation = "1.0.0-alpha12"
 tvMaterial = "1.0.0"
@@ -30,9 +30,9 @@ androidx-tv-material = { group = "androidx.tv", name = "tv-material", version.re
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 compose-webview-multiplatform = { module = "io.github.kevinnzou:compose-webview-multiplatform", version.ref = "composeWebviewMultiplatform" }
-ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktorClientCio" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktorClientCore" }
 androidx-material3-android = { group = "androidx.compose.material3", name = "material3-android", version.ref = "material3Android" }
+ktor-ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktorClientOkhttpVersion" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

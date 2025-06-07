@@ -9,7 +9,7 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.cio.CIO
+import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.request.get
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsChannel
@@ -52,7 +52,7 @@ class UpdateViewModel : ViewModel() {
     }
 
     private suspend fun downloadApk(context: Context, url: String, tagName: String): File {
-        val client = HttpClient(CIO)
+        val client = HttpClient(OkHttp)
         val file = File(context.cacheDir, "NoTubeTV_$tagName.apk")
 
         val response: HttpResponse = client.get(url)
