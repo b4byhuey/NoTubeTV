@@ -12,7 +12,7 @@ import com.multiplatform.webview.web.AccompanistWebChromeClient
 import com.multiplatform.webview.web.PlatformWebViewParams
 
 @Composable
-fun permissionHandlerChrome(context: Context): PlatformWebViewParams {
+fun permHandler(context: Context): PlatformWebViewParams {
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()

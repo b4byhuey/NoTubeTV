@@ -18,18 +18,17 @@ import com.multiplatform.webview.web.WebView
 import com.multiplatform.webview.web.rememberWebViewNavigator
 import com.multiplatform.webview.web.rememberWebViewState
 import com.ycngmn.notubetv.R
-import com.ycngmn.notubetv.ui.MainViewModel
+import com.ycngmn.notubetv.ui.YoutubeVM
 import com.ycngmn.notubetv.ui.components.UpdateDialog
 import com.ycngmn.notubetv.utils.ExitBridge
 import com.ycngmn.notubetv.utils.NetworkBridge
 import com.ycngmn.notubetv.utils.fetchScripts
 import com.ycngmn.notubetv.utils.getUpdate
-import com.ycngmn.notubetv.utils.permissionHandlerChrome
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import com.ycngmn.notubetv.utils.permHandler
+import com.ycngmn.notubetv.utils.readRaw
 
 @Composable
-fun YoutubeWV(youtubeVM: MainViewModel = viewModel()) {
+fun YoutubeWV(youtubeVM: YoutubeVM = viewModel()) {
 
     val context = LocalContext.current
     val activity = context as Activity
@@ -46,21 +45,15 @@ fun YoutubeWV(youtubeVM: MainViewModel = viewModel()) {
     // Translate native back-presses to 'escape' button press
     BackHandler {
         if (state.loadingState is LoadingState.Finished)
-            navigator.evaluateJavaScript(
-                context.resources.openRawResource(R.raw.back_bridge)
-                    .bufferedReader().use { it.readText() }
-            )
+            navigator.evaluateJavaScript(readRaw(context, R.raw.back_bridge))
         else exitTrigger.value = true
     }
 
     // Fetch scripts and updates at launch
     LaunchedEffect(Unit) {
-        val fetchedScripts = withContext(Dispatchers.IO) { fetchScripts() }
-        youtubeVM.setScript(fetchedScripts)
-        withContext(Dispatchers.IO) {
-            getUpdate(context, navigator) { update ->
-                if (update != null) youtubeVM.setUpdate(update)
-            }
+        youtubeVM.setScript(fetchScripts() )
+        getUpdate(context, navigator) { update ->
+            if (update != null) youtubeVM.setUpdate(update)
         }
     }
 
@@ -71,17 +64,15 @@ fun YoutubeWV(youtubeVM: MainViewModel = viewModel()) {
     // If exit button is pressed, 'finish the activity' aka 'exit the app'.
     if (exitTrigger.value) activity.finish()
 
-
     // This is the loading screen
     val loading = state.loadingState as? LoadingState.Loading
     if (loading != null) SplashLoading(loading.progress)
-
 
     WebView(
         modifier = Modifier.fillMaxSize(),
         state = state,
         navigator = navigator,
-        platformWebViewParams = permissionHandlerChrome(context),
+        platformWebViewParams = permHandler(context),
         captureBackPresses = false,
         onCreated = { webView ->
 
@@ -124,8 +115,8 @@ fun YoutubeWV(youtubeVM: MainViewModel = viewModel()) {
 
                 // Enables hardware acceleration
                 setLayerType(View.LAYER_TYPE_HARDWARE, null)
-                // Set the zoom to 35% to fit the screen. Side-effect of viewport spoofing.
-                setInitialScale(35)
+                // Set the zoom to 25% to fit the screen. Side-effect of viewport spoofing.
+                setInitialScale(25)
 
                 // Hide scrollbars
                 isVerticalScrollBarEnabled = false
