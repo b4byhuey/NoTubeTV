@@ -1,3 +1,6 @@
+> [!IMPORTANT]
+><p> Looks like this project motivated <i> reisXd</i> to make their work public <a href="https://github.com/reisxd/TizenTubeCobalt">@reisxd/TizenTubeCobalt</a>. Please use <b>TizenTube-Cobalt</b> from the url above which supports everything  including voice search and fixes a lot of our curent issues. And don't forget to show them your love. ❤️ </p>
+
 # NoTubeTV
 <p align="center">
   <img src='assets/NoTubeTV_banner.png' alt="NoTubeTV_banner_image">
