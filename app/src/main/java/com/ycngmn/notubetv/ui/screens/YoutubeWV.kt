@@ -1,140 +1,114 @@
 package com.ycngmn.notubetv.ui.screens
 
 import android.app.Activity
+import android.os.Build
 import android.view.View
 import android.view.WindowManager
 import android.webkit.CookieManager
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.multiplatform.webview.web.LoadingState
 import com.multiplatform.webview.web.WebView
 import com.multiplatform.webview.web.rememberWebViewNavigator
 import com.multiplatform.webview.web.rememberWebViewState
 import com.ycngmn.notubetv.R
+import com.ycngmn.notubetv.ui.YouTubeVM
 import com.ycngmn.notubetv.ui.components.UpdateDialog
 import com.ycngmn.notubetv.utils.ExitBridge
 import com.ycngmn.notubetv.utils.NetworkBridge
-import com.ycngmn.notubetv.utils.ReleaseData
-import com.ycngmn.notubetv.utils.fetchScripts
-import com.ycngmn.notubetv.utils.getUpdate
-import com.ycngmn.notubetv.utils.permissionHandlerChrome
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import com.ycngmn.notubetv.utils.permHandler
+import com.ycngmn.notubetv.utils.readRaw
 
 @Composable
-fun YoutubeWV() {
-
+fun YoutubeWV(youtubeVM: YouTubeVM = viewModel()) {
     val context = LocalContext.current
     val activity = context as Activity
 
     val state = rememberWebViewState("https://www.youtube.com/tv")
     val navigator = rememberWebViewNavigator()
 
-    val shouldFetch = remember { mutableStateOf(false) }
-    val updateData = remember { mutableStateOf<ReleaseData?>(null) }
+    val scriptData by youtubeVM.scriptData
+    val updateData by youtubeVM.updateData
 
+    val loadingState = state.loadingState
     val exitTrigger = remember { mutableStateOf(false) }
 
-    // Translate native back-presses to 'escape' button press
+    // Back button behavior
     BackHandler {
-        if (state.loadingState is LoadingState.Finished)
-            navigator.evaluateJavaScript(
-                context.resources.openRawResource(R.raw.back_bridge)
-                    .bufferedReader().use { it.readText() }
-            )
-        else exitTrigger.value = true
-    }
-
-    // Check if the scripts already has been applied.
-    LaunchedEffect(state.loadingState) {
-        if (state.loadingState == LoadingState.Finished) {
-            navigator.evaluateJavaScript("(() => { return window.modernUI != null; })()") {
-               shouldFetch.value = (it == "false")
-            }
+        if (loadingState is LoadingState.Finished) {
+            navigator.evaluateJavaScript(readRaw(context, R.raw.back_bridge))
+        } else {
+            exitTrigger.value = true
         }
     }
 
-    // Fetch and apply scripts and updates at launch from Github
-    LaunchedEffect(shouldFetch.value) {
-        if (!shouldFetch.value) return@LaunchedEffect
-
-        val fetchedScripts = withContext(Dispatchers.IO) { fetchScripts() }
-        navigator.evaluateJavaScript(fetchedScripts)
-
-        withContext(Dispatchers.IO) {
-            getUpdate(context, navigator) { update ->
-                if (update != null) updateData.value = update
-            }
-        }
+    // Launch data fetching
+    LaunchedEffect(true) {
+        youtubeVM.fetchAll(context, navigator)
     }
-    
-    // If any update found, show the dialog.
-    if (updateData.value != null) UpdateDialog(updateData.value!!, navigator)
-    // If exit button is pressed, 'finish the activity' aka 'exit the app'.
+
+    // Apply script after load
+    if (loadingState is LoadingState.Finished && scriptData != null) {
+        navigator.evaluateJavaScript(scriptData!!)
+    }
+
+    if (updateData != null) {
+        UpdateDialog(updateData!!, navigator)
+    }
+
     if (exitTrigger.value) activity.finish()
 
-
-    // This is the loading screen
-    val loading = state.loadingState as? LoadingState.Loading
-    if (loading != null) SplashLoading(loading.progress)
-
+    if (loadingState is LoadingState.Loading) {
+        SplashLoading(loadingState.progress)
+    }
 
     WebView(
         modifier = Modifier.fillMaxSize(),
         state = state,
         navigator = navigator,
-        platformWebViewParams = permissionHandlerChrome(context),
+        platformWebViewParams = permHandler(context),
         captureBackPresses = false,
         onCreated = { webView ->
 
-            (activity.window).setLayout(
+            activity.window.setLayout(
                 WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.MATCH_PARENT
             )
 
-            // Set up cookies
+            // Cookie setup
             val cookieManager = CookieManager.getInstance()
             cookieManager.setAcceptCookie(true)
             cookieManager.setAcceptThirdPartyCookies(webView, true)
-            cookieManager.flush()
+            Thread { // Handle flushing in background thread
+                cookieManager.flush()
+            }.start()
 
             state.webSettings.apply {
-                // This user agent provides native like experience .
                 customUserAgentString = "Mozilla/5.0 Cobalt/25 (Sony, PS4, Wired)"
                 isJavaScriptEnabled = true
-
                 androidWebSettings.apply {
-                    //isDebugInspectorInfoEnabled = true
                     useWideViewPort = true
                     domStorageEnabled = true
-                    hideDefaultVideoPoster = true
                     mediaPlaybackRequiresUserGesture = false
                 }
             }
 
             webView.apply {
-
-                // Bridges the exit button click on the website to handle it natively.
                 addJavascriptInterface(ExitBridge(exitTrigger), "ExitBridge")
-
-                /*
-                Youtube's content security policy doesn't allow calling fetch on
-                3rd party websites (eg. SponsorBlock api). This bridge counters that
-                handling the requests on the native side. */
                 addJavascriptInterface(NetworkBridge(navigator), "NetworkBridge")
-
-                // Enables hardware acceleration
-                setLayerType(View.LAYER_TYPE_HARDWARE, null)
-                // Set the zoom to 35% to fit the screen. Side-effect of viewport spoofing.
-                setInitialScale(35)
-
-                // Hide scrollbars
+                
+                // Fix hardware acceleration for older APIs
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    setLayerType(View.LAYER_TYPE_HARDWARE, null)
+                } else {
+                    setLayerType(View.LAYER_TYPE_SOFTWARE, null)
+                }
+                
+                setInitialScale(33)
                 isVerticalScrollBarEnabled = false
                 isHorizontalScrollBarEnabled = false
             }

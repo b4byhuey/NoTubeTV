@@ -7,24 +7,40 @@ plugins {
 android {
     namespace = "com.ycngmn.notubetv"
     compileSdk = 35
+	
+	signingConfigs {
+        create("stableRelease") {
+            storeFile = file("D:\\Data\\Videos\\APK.Easy.Tool\\Resources\\test.jks")
+            storePassword = "123456"
+            keyAlias = "key0"
+            keyPassword = "123456"
+        }
+    }
 
     defaultConfig {
         applicationId = "com.ycngmn.notubetv"
-        minSdk = 24
+        minSdk = 23
         targetSdk = 35
-        versionCode = 2
-        versionName = "0.0.25"
+        versionCode = 3
+        versionName = "0.0.26"
+		
+		ndk {
+            abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a"))
+        }
+		
+		setProperty("archivesBaseName", "YouTubeTV_v$versionName")
 
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = true
-            isShrinkResources = true
+            isMinifyEnabled = false
+            isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+			signingConfig = signingConfigs.getByName("stableRelease")
         }
     }
     compileOptions {
@@ -41,7 +57,7 @@ android {
 
 dependencies {
     implementation(libs.ktor.client.core)
-    implementation(libs.ktor.client.cio)
+    implementation (libs.ktor.ktor.client.okhttp)
     api(libs.compose.webview.multiplatform)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.core.ktx)

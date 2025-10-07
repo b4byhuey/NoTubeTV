@@ -12,21 +12,32 @@ import com.multiplatform.webview.web.AccompanistWebChromeClient
 import com.multiplatform.webview.web.PlatformWebViewParams
 
 @Composable
-fun permissionHandlerChrome(context: Context): PlatformWebViewParams {
+fun permHandler(context: Context): PlatformWebViewParams {
+    val permissionGranted = remember { androidx.compose.runtime.mutableStateOf(hasPermission(context)) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) {}
+    ) { granted ->
+        permissionGranted.value = granted
+    }
 
-    val chrome = remember {
+    val chrome = remember(permissionGranted.value) {
         object : AccompanistWebChromeClient() {
             override fun onPermissionRequest(request: PermissionRequest) {
-                if (PermissionRequest.RESOURCE_AUDIO_CAPTURE in request.resources && !hasPermission(context))
-                    permissionLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
-                request.grant(request.resources)
+                if (PermissionRequest.RESOURCE_AUDIO_CAPTURE in request.resources) {
+                    if (permissionGranted.value) {
+                        request.grant(request.resources)
+                    } else {
+                        permissionLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
+                        // grant() akan dipicu otomatis setelah recomposition berikutnya
+                    }
+                } else {
+                    request.grant(request.resources)
+                }
             }
         }
     }
+
     return PlatformWebViewParams(chromeClient = chrome)
 }
 
