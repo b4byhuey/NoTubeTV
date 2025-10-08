@@ -1,3 +1,23 @@
+/* Start stayActive.js */
+Object.defineProperty(document, "hidden", {
+  get: function() { return false; }
+});
+Object.defineProperty(document, "visibilityState", {
+  get: function() { return "visible"; }
+});
+
+function stayActive() {
+  const events = ["mousemove", "touchstart", "scroll"];
+  const evtName = events[Math.floor(Math.random() * events.length)];
+  document.dispatchEvent(new Event(evtName, { bubbles: true, cancelable: true }));  
+  
+  const next = 50000 + Math.random() * 30000;
+  setTimeout(stayActive, next);
+}
+
+stayActive();
+/* End stayActive.js */
+
 /* Start spoofViewport.js */
 (function () {
   var existing = document.querySelector('meta[name="viewport"]');
