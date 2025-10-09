@@ -10,10 +10,10 @@ android {
 	
 	signingConfigs {
         create("stableRelease") {
-            storeFile = file("D:\\Data\\Videos\\APK.Easy.Tool\\Resources\\test.jks")
-            storePassword = "123456"
-            keyAlias = "key0"
-            keyPassword = "123456"
+            storeFile = file("")
+            storePassword = ""
+            keyAlias = ""
+            keyPassword = ""
         }
     }
 
