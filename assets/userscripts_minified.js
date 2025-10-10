@@ -868,3 +868,60 @@ stayActive();
   removeAds();
 })();
 /* End antiBanner.js */
+
+/* Start antiBannerFix.js */
+(function() {
+  function removeAds() {
+    var selectors = [
+      "ytd-ad-slot-renderer",
+      "ytd-display-ad-renderer",
+      "ytd-promoted-sparkles-web-renderer",
+      "ytd-rich-section-renderer",
+      "#masthead-ad",
+      "ytd-banner-promo-renderer"
+    ];
+    for (var i = 0; i < selectors.length; i++) {
+      var els = document.querySelectorAll(selectors[i]);
+      for (var j = 0; j < els.length; j++) {
+        if (els[j] && els[j].parentNode) els[j].parentNode.removeChild(els[j]);
+      }
+    }
+  }
+
+  function startObserver() {
+    try {
+      if (window._adObserverStarted) return;
+      window._adObserverStarted = true;
+      var observer = new MutationObserver(removeAds);
+      observer.observe(document.documentElement || document.body, { childList: true, subtree: true });
+    } catch (e) {
+      console.warn("antiBanner observer error:", e);
+    }
+  }
+
+  function initAdRemover() {
+    removeAds();
+    startObserver();
+  }
+
+  // Jalankan segera
+  initAdRemover();
+
+  // Polling awal 5 detik pertama (untuk iklan Welcome section)
+  var initTries = 0;
+  var earlyPoll = setInterval(function() {
+    removeAds();
+    initTries++;
+    if (initTries > 10) clearInterval(earlyPoll);
+  }, 500);
+
+  // Re-trigger tiap kali URL berubah (SPA navigation)
+  var lastUrl = location.href;
+  setInterval(function() {
+    if (location.href !== lastUrl) {
+      lastUrl = location.href;
+      setTimeout(initAdRemover, 1500); // tunggu render dulu
+    }
+  }, 1000);
+})();
+/* End antiBannerFix.js */
