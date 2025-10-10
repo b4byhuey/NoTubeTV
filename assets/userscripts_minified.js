@@ -728,7 +728,7 @@ stayActive();
     }
   };
 
-// Polyfill fetch()
+  // Polyfill fetch()
   function fetchPolyfill(url, callback) {
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url, true);
@@ -840,3 +840,31 @@ stayActive();
   })();
 })();
 
+/* Start antiBanner.js */
+(function() {
+  function removeAds() {
+    // hapus elemen iklan umum & billboard besar
+    var selectors = [
+      "ytd-ad-slot-renderer",
+      "ytd-display-ad-renderer",
+      "ytd-promoted-sparkles-web-renderer",
+      "ytd-rich-section-renderer",
+      "#masthead-ad",
+      "ytd-banner-promo-renderer"
+    ];
+    for (var i = 0; i < selectors.length; i++) {
+      var els = document.querySelectorAll(selectors[i]);
+      for (var j = 0; j < els.length; j++) {
+        if (els[j] && els[j].parentNode) els[j].parentNode.removeChild(els[j]);
+      }
+    }
+  }
+
+  // amati perubahan DOM supaya iklan baru juga dihapus
+  var observer = new MutationObserver(removeAds);
+  observer.observe(document.documentElement || document.body, { childList: true, subtree: true });
+
+  // hapus iklan awal
+  removeAds();
+})();
+/* End antiBanner.js */
