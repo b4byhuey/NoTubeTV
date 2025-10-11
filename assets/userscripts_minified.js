@@ -852,75 +852,57 @@
     observer.observe(document.body, { childList: true, subtree: true });
   })();
 })();
+/* End TizenTubeScripts.js */
 
-/* Start antiBanner.js */
+/* Start antiBannerUnified.js */
 (function() {
+  // Daftar selector iklan yang ingin dihapus
+  var SELECTORS = [
+    "ytd-ad-slot-renderer",
+    "ytd-display-ad-renderer",
+    "ytd-promoted-sparkles-web-renderer",
+    "ytd-rich-section-renderer",
+    "ytd-banner-promo-renderer",
+    "#masthead-ad"
+  ];
+
+  // Fungsi hapus iklan
   function removeAds() {
-    // hapus elemen iklan umum & billboard besar
-    var selectors = [
-      "ytd-ad-slot-renderer",
-      "ytd-display-ad-renderer",
-      "ytd-promoted-sparkles-web-renderer",
-      "ytd-rich-section-renderer",
-      "#masthead-ad",
-      "ytd-banner-promo-renderer"
-    ];
-    for (var i = 0; i < selectors.length; i++) {
-      var els = document.querySelectorAll(selectors[i]);
+    for (var i = 0; i < SELECTORS.length; i++) {
+      var els = document.querySelectorAll(SELECTORS[i]);
       for (var j = 0; j < els.length; j++) {
-        if (els[j] && els[j].parentNode) els[j].parentNode.removeChild(els[j]);
+        try {
+          els[j].parentNode.removeChild(els[j]);
+        } catch(e) {}
       }
     }
   }
 
-  // amati perubahan DOM supaya iklan baru juga dihapus
-  var observer = new MutationObserver(removeAds);
-  observer.observe(document.documentElement || document.body, { childList: true, subtree: true });
-
-  // hapus iklan awal
-  removeAds();
-})();
-/* End antiBanner.js */
-
-/* Start antiBannerFix.js */
-(function() {
-  function removeAds() {
-    var selectors = [
-      "ytd-ad-slot-renderer",
-      "ytd-display-ad-renderer",
-      "ytd-promoted-sparkles-web-renderer",
-      "ytd-rich-section-renderer",
-      "#masthead-ad",
-      "ytd-banner-promo-renderer"
-    ];
-    for (var i = 0; i < selectors.length; i++) {
-      var els = document.querySelectorAll(selectors[i]);
-      for (var j = 0; j < els.length; j++) {
-        if (els[j] && els[j].parentNode) els[j].parentNode.removeChild(els[j]);
-      }
-    }
-  }
-
+  // Observer untuk DOM dinamis (navigasi, scroll, rekomendasi baru)
   function startObserver() {
     try {
-      if (window._adObserverStarted) return;
-      window._adObserverStarted = true;
+      if (window._ytUnifiedAdObserverStarted) return;
+      window._ytUnifiedAdObserverStarted = true;
       var observer = new MutationObserver(removeAds);
-      observer.observe(document.documentElement || document.body, { childList: true, subtree: true });
-    } catch (e) {
-      console.warn("antiBanner observer error:", e);
+      observer.observe(document.documentElement || document.body, {
+        childList: true,
+        subtree: true
+      });
+    } catch(e) {
+      console.warn("antiBannerUnified observer error:", e);
     }
   }
 
+  // Jalankan observer dan clean-up awal
   function initAdRemover() {
     removeAds();
     startObserver();
   }
 
-  // Jalankan segera
+  // Eksekusi awal langsung
   initAdRemover();
 
-  // Polling awal 5 detik pertama (untuk iklan Welcome section)
+  // Polling 5 detik pertama — tangkap iklan awal (termasuk “Selamat Datang Kembali”)
   var initTries = 0;
   var earlyPoll = setInterval(function() {
     removeAds();
@@ -928,13 +910,13 @@
     if (initTries > 10) clearInterval(earlyPoll);
   }, 500);
 
-  // Re-trigger tiap kali URL berubah (SPA navigation)
+  // Re-run tiap kali URL berubah (SPA navigation)
   var lastUrl = location.href;
   setInterval(function() {
     if (location.href !== lastUrl) {
       lastUrl = location.href;
-      setTimeout(initAdRemover, 1500); // tunggu render dulu
+      setTimeout(initAdRemover, 1500);
     }
   }, 1000);
 })();
-/* End antiBannerFix.js */
+/* End antiBannerUnified.js */
