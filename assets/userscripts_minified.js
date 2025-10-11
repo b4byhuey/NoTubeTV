@@ -1,6 +1,6 @@
-/* Start stayActiveHybrid.js */
+/* Start stayActiveTVsafe.js */
 (function() {
-  // spoof visibilityState ulang tiap 5 detik agar tidak ditimpa
+  // Pasang spoof visibility, ulang tiap 10 detik agar tidak di-override
   function applyVisibilitySpoof() {
     try {
       Object.defineProperty(document, "hidden", { get: function() { return false; }, configurable: true });
@@ -8,33 +8,28 @@
     } catch(e) {}
   }
   applyVisibilitySpoof();
-  setInterval(applyVisibilitySpoof, 5000);
+  setInterval(applyVisibilitySpoof, 10000);
 
-  // fungsi untuk kirim event alami + remote key event
-  function simulateActivity() {
+  function simulateLightActivity() {
     try {
-      var events = ["mousemove", "touchstart", "scroll"];
-      var evtName = events[Math.floor(Math.random() * events.length)];
-      document.dispatchEvent(new Event(evtName, { bubbles: true, cancelable: true }));
-
-      // simulasi input remote control Android TV (D-pad, Enter)
-      var keys = [13, 37, 38, 39, 40];
-      var key = keys[Math.floor(Math.random() * keys.length)];
-      var keyEvent = new KeyboardEvent("keydown", { bubbles: true, cancelable: true, keyCode: key, which: key });
-      document.dispatchEvent(keyEvent);
-
-      var keyEventUp = new KeyboardEvent("keyup", { bubbles: true, cancelable: true, keyCode: key, which: key });
-      document.dispatchEvent(keyEventUp);
+      var video = document.querySelector("video");
+      if (video) {
+        // Kirim event focus dan mousemove agar dianggap aktif
+        video.dispatchEvent(new Event("focus", { bubbles: true }));
+        video.dispatchEvent(new Event("mousemove", { bubbles: true }));
+      } else {
+        // fallback untuk halaman lain
+        document.dispatchEvent(new Event("mousemove", { bubbles: true }));
+      }
     } catch(e) {}
-    
-    // interval acak antara 50–90 detik
-    var next = 50000 + Math.random() * 40000;
-    setTimeout(simulateActivity, next);
+    // interval acak 60-90 detik
+    var next = 60000 + Math.random() * 30000;
+    setTimeout(simulateLightActivity, next);
   }
 
-  simulateActivity();
+  simulateLightActivity();
 })();
-/* End stayActiveHybrid.js */
+/* End stayActiveTVsafe.js */
 
 /* Start spoofViewport.js */
 (function () {
