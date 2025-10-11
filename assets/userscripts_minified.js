@@ -1,22 +1,40 @@
-/* Start stayActive.js */
-Object.defineProperty(document, "hidden", {
-  get: function() { return false; }
-});
-Object.defineProperty(document, "visibilityState", {
-  get: function() { return "visible"; }
-});
+/* Start stayActiveHybrid.js */
+(function() {
+  // spoof visibilityState ulang tiap 5 detik agar tidak ditimpa
+  function applyVisibilitySpoof() {
+    try {
+      Object.defineProperty(document, "hidden", { get: function() { return false; }, configurable: true });
+      Object.defineProperty(document, "visibilityState", { get: function() { return "visible"; }, configurable: true });
+    } catch(e) {}
+  }
+  applyVisibilitySpoof();
+  setInterval(applyVisibilitySpoof, 5000);
 
-function stayActive() {
-  const events = ["mousemove", "touchstart", "scroll"];
-  const evtName = events[Math.floor(Math.random() * events.length)];
-  document.dispatchEvent(new Event(evtName, { bubbles: true, cancelable: true }));  
-  
-  const next = 50000 + Math.random() * 30000;
-  setTimeout(stayActive, next);
-}
+  // fungsi untuk kirim event alami + remote key event
+  function simulateActivity() {
+    try {
+      var events = ["mousemove", "touchstart", "scroll"];
+      var evtName = events[Math.floor(Math.random() * events.length)];
+      document.dispatchEvent(new Event(evtName, { bubbles: true, cancelable: true }));
 
-stayActive();
-/* End stayActive.js */
+      // simulasi input remote control Android TV (D-pad, Enter)
+      var keys = [13, 37, 38, 39, 40];
+      var key = keys[Math.floor(Math.random() * keys.length)];
+      var keyEvent = new KeyboardEvent("keydown", { bubbles: true, cancelable: true, keyCode: key, which: key });
+      document.dispatchEvent(keyEvent);
+
+      var keyEventUp = new KeyboardEvent("keyup", { bubbles: true, cancelable: true, keyCode: key, which: key });
+      document.dispatchEvent(keyEventUp);
+    } catch(e) {}
+    
+    // interval acak antara 50–90 detik
+    var next = 50000 + Math.random() * 40000;
+    setTimeout(simulateActivity, next);
+  }
+
+  simulateActivity();
+})();
+/* End stayActiveHybrid.js */
 
 /* Start spoofViewport.js */
 (function () {
