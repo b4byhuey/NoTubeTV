@@ -31,6 +31,32 @@
 })();
 /* End stayActiveTVsafe.js */
 
+/* Start focusKeeper.js */
+(function() {
+  function keepPlayerFocused() {
+    try {
+      // Jika elemen video atau player ada, beri focus setiap 30 menit
+      var player = document.querySelector("video, ytd-player, #movie_player");
+      if (player && typeof player.focus === "function") {
+        player.focus();
+        window.focus();
+        document.dispatchEvent(new Event("focus", { bubbles: true }));
+        console.log("[focusKeeper] refreshed focus on player");
+      }
+    } catch(e) {
+      console.warn("[focusKeeper] error:", e);
+    }
+  }
+
+  // Jalankan pertama kali setelah 1 menit (biar tidak ganggu awal playback)
+  setTimeout(function() {
+    keepPlayerFocused();
+    // Ulangi setiap 30–40 menit
+    setInterval(keepPlayerFocused, 1800000 + Math.random() * 600000);
+  }, 60000);
+})();
+/* End focusKeeper.js */
+
 /* Start spoofViewport.js */
 (function () {
   var existing = document.querySelector('meta[name="viewport"]');
