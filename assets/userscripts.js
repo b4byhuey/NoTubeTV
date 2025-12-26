@@ -1,14 +1,8 @@
 /* Start spoofViewport.js */
-// Enables 4K resolution tricking youtube into thinking that we are on a 4K TV
 (function () {
-  //if (window.screen.width >= 3840 || window.screen.height >= 2160) return;
-
   var existing = document.querySelector('meta[name="viewport"]');
   if (existing) {
-    existing.setAttribute(
-      "content",
-      "width=3840, height=2160, initial-scale=1.0"
-    );
+    existing.setAttribute("content", "width=3840, height=2160, initial-scale=1.0");
   } else {
     var meta = document.createElement("meta");
     meta.name = "viewport";
@@ -18,119 +12,12 @@
 })();
 /* End spoofViewport.js */
 
-/* Start menuTrigger.js */
-// Add a "button" to fool you...
-(function () {
-  function getSearchBar() {
-    const searchBars = document.querySelectorAll(
-      '[idomkey="ytLrSearchBarSearchTextBox"]'
-    );
-    return searchBars[searchBars.length - 1] ?? null;
-  }
-
-  function addMenuButton() {
-    const searchBar = getSearchBar();
-    if (!searchBar) return;
-
-    const parent = searchBar.parentNode;
-    if (parent.querySelector('button[data-notubetv="menu"]')) return; // already exists
-
-    // Align horizontally to the search box
-    parent.style.display = "flex";
-    parent.style.flexDirection = "row";
-    parent.style.alignItems = "center";
-
-    // Create the NoTUbeTV Menu button
-    const menuButton = document.createElement("button");
-    menuButton.setAttribute("data-notubetv", "menu");
-    menuButton.innerHTML = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="62" height="62" viewBox="0 0 24 24" fill="rgba(255, 255, 255, 0.8)">
-        <path d="M20 6h-4V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2H4a2 2 0 0 0-2 2v3h20V8a2 2 0 0 0-2-2zM10 4h4v2h-4V4zm10 7H2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-7z"/>
-      </svg>`;
-    menuButton.style.marginLeft = "54px";
-    menuButton.style.padding = "35px";
-    menuButton.style.background = "rgba(255, 255, 255, 0.1)";
-    menuButton.style.border = "none";
-    menuButton.style.borderRadius = "88px";
-
-    // Insert right next the search box
-    parent.insertBefore(menuButton, searchBar.nextSibling);
-  }
-
-  addMenuButton();
-
-  // Here the fooling part begins.
-  // If the search tab is focused and the 'right arrow" is pressed, open up the menu.
-
-  document.addEventListener("keydown", function (event) {
-    if (event.key === "ArrowRight") {
-      const searchBar = getSearchBar();
-      const isFocused = searchBar?.classList?.contains(
-        "ytLrSearchTextBoxFocused"
-      );
-      if (searchBar && isFocused) {
-        modernUI(); // from 'userscript.js'
-        const menuButton = document.querySelector(
-          'button[data-notubetv="menu"]'
-        );
-        menuButton.style.background = "white";
-      }
-    }
-  });
-
-  const observer = new MutationObserver((mutations) => {
-    const searchBar = getSearchBar();
-    if (
-      searchBar &&
-      !searchBar.parentNode.querySelector('[data-notubetv="menu"]')
-    ) {
-      addMenuButton(); // Re-add if missing
-    }
-  });
-
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true,
-  });
-})();
-/* End menuTrigger.js */
-
-/* Start exitBridge.js */
-// Exit Bridge to react to exit button call.
-(function () {
-  const observer = new MutationObserver((mutations, obs) => {
-    const exitButton = document.querySelector(
-      ".ytVirtualListItemLast ytlr-button.ytLrButtonLargeShape"
-    );
-
-    if (exitButton) {
-      exitButton.addEventListener(
-        "keydown",
-        (e) => {
-          if (
-            (e.key === "Enter" || e.keyCode === 13) &&
-            typeof ExitBridge !== "undefined" &&
-            ExitBridge.onExitCalled
-          ) {
-            e.preventDefault();
-            e.stopPropagation();
-            ExitBridge.onExitCalled();
-          }
-        },
-        true
-      );
-    }
-  });
-  observer.observe(document.body, { childList: true, subtree: true });
-})();
-/* End exitBridge.js */
-
 /* Start TizenTubeScripts.js */
 (function () {
   "use strict";
 
-  const CONFIG_KEY = "ytaf-configuration";
-  const defaultConfig = {
+  var CONFIG_KEY = "ytaf-configuration";
+  var defaultConfig = {
     enableAdBlock: true,
     enableSponsorBlock: true,
     sponsorBlockManualSkips: [],
@@ -140,21 +27,18 @@
     enableSponsorBlockInteraction: true,
     enableSponsorBlockSelfPromo: true,
     enableSponsorBlockMusicOfftopic: true,
-    enableShorts: true,
+    enableSponsorBlockPreview: true,
+    enableSponsorBlockFiller: true,
+    enableShorts: true
   };
-
-  let localConfig;
-
+  var localConfig;
   try {
     localConfig = JSON.parse(window.localStorage[CONFIG_KEY]);
   } catch (err) {
-    //console.warn('Config read failed:', err);
     localConfig = defaultConfig;
   }
 
-  window.localConfig = window.localStorage[CONFIG_KEY]
-    ? JSON.parse(window.localStorage[CONFIG_KEY])
-    : defaultConfig;
+  window.localConfig = window.localStorage[CONFIG_KEY] ? JSON.parse(window.localStorage[CONFIG_KEY]) : defaultConfig;
 
   window.configRead = function (key) {
     if (window.localConfig[key] === undefined) {
@@ -169,35 +53,35 @@
   };
 
   function showToast(title, subtitle, thumbnails) {
-    const toastCmd = {
+    var toastCmd = {
       openPopupAction: {
         popupType: "TOAST",
         popup: {
           overlayToastRenderer: {
             title: {
-              simpleText: title,
+              simpleText: title
             },
             subtitle: {
-              simpleText: subtitle,
-            },
-          },
-        },
-      },
+              simpleText: subtitle
+            }
+          }
+        }
+      }
     };
     resolveCommand(toastCmd);
   }
 
   function showModal(title, content, selectIndex, id, update) {
     if (!update) {
-      const closeCmd = {
+      var closeCmd = {
         signalAction: {
-          signal: "POPUP_BACK",
-        },
+          signal: "POPUP_BACK"
+        }
       };
       resolveCommand(closeCmd);
     }
 
-    const modalCmd = {
+    var modalCmd = {
       openPopupAction: {
         popupType: "MODAL",
         popup: {
@@ -209,43 +93,43 @@
                     header: {
                       overlayPanelHeaderRenderer: {
                         title: {
-                          simpleText: title,
-                        },
-                      },
+                          simpleText: title
+                        }
+                      }
                     },
                     content: {
                       overlayPanelItemListRenderer: {
                         items: content,
-                        selectedIndex: selectIndex,
-                      },
-                    },
-                  },
+                        selectedIndex: selectIndex
+                      }
+                    }
+                  }
                 },
                 backButton: {
                   buttonRenderer: {
                     accessibilityData: {
                       accessibilityData: {
-                        label: "Back",
-                      },
+                        label: "Back"
+                      }
                     },
                     command: {
                       signalAction: {
-                        signal: "POPUP_BACK",
-                      },
-                    },
-                  },
-                },
-              },
+                        signal: "POPUP_BACK"
+                      }
+                    }
+                  }
+                }
+              }
             },
             dismissalCommand: {
               signalAction: {
-                signal: "POPUP_BACK",
-              },
-            },
-          },
+                signal: "POPUP_BACK"
+              }
+            }
+          }
         },
-        uniqueId: id,
-      },
+        uniqueId: id
+      }
     };
 
     if (update) {
@@ -257,104 +141,75 @@
   }
 
   function buttonItem(title, icon, commands) {
-    const button = {
+    var button = {
       compactLinkRenderer: {
         serviceEndpoint: {
           commandExecutorCommand: {
-            commands,
-          },
-        },
-      },
+            commands: commands
+          }
+        }
+      }
     };
 
     if (title) {
       button.compactLinkRenderer.title = {
-        simpleText: title.title,
+        simpleText: title.title
       };
     }
 
     if (title.subtitle) {
       button.compactLinkRenderer.subtitle = {
-        simpleText: title.subtitle,
+        simpleText: title.subtitle
       };
     }
 
     if (icon) {
       button.compactLinkRenderer.icon = {
-        iconType: icon.icon,
+        iconType: icon.icon
       };
     }
 
     if (icon && icon.secondaryIcon) {
       button.compactLinkRenderer.secondaryIcon = {
-        iconType: icon.secondaryIcon,
+        iconType: icon.secondaryIcon
       };
     }
 
     return button;
   }
 
-  window.modernUI = function modernUI(update, parameters) {
-    const settings = [
-      {
-        name: "Ad block",
-        icon: "DOLLAR_SIGN",
-        value: "enableAdBlock",
-      },
-      {
-        name: "SponsorBlock",
-        icon: "MONEY_HAND",
-        value: "enableSponsorBlock",
-      },
-      {
-        name: "Skip Sponsor Segments",
-        icon: "MONEY_HEART",
-        value: "enableSponsorBlockSponsor",
-      },
-      {
-        name: "Skip Intro Segments",
-        icon: "PLAY_CIRCLE",
-        value: "enableSponsorBlockIntro",
-      },
-      {
-        name: "Skip Outro Segments",
-        value: "enableSponsorBlockOutro",
-      },
-      {
-        name: "Skip Interaction Reminder Segments",
-        value: "enableSponsorBlockInteraction",
-      },
-      {
-        name: "Skip Self-Promotion Segments",
-        value: "enableSponsorBlockSelfPromo",
-      },
-      {
-        name: "Skip Off-Topic Music Segments",
-        value: "enableSponsorBlockMusicOfftopic",
-      },
-      {
-        name: "Shorts",
-        icon: "YOUTUBE_SHORTS_FILL_24",
-        value: "enableShorts",
-      },
+  window.modernUI = function (update, parameters) {
+    var settings = [
+      { name: "Ad block", icon: "DOLLAR_SIGN", value: "enableAdBlock" },
+      { name: "SponsorBlock", icon: "MONEY_HAND", value: "enableSponsorBlock" },
+      { name: "Skip Sponsor Segments", icon: "MONEY_HEART", value: "enableSponsorBlockSponsor" },
+      { name: "Skip Intro Segments", icon: "PLAY_CIRCLE", value: "enableSponsorBlockIntro" },
+      { name: "Skip Outro Segments", value: "enableSponsorBlockOutro" },
+      { name: "Skip Interaction Reminder Segments", value: "enableSponsorBlockInteraction" },
+      { name: "Skip Self-Promotion Segments", value: "enableSponsorBlockSelfPromo" },
+      { name: "Skip Preview Segments", value: "enableSponsorBlockPreview" },
+      { name: "Skip Filler Segments", value: "enableSponsorBlockFiller" },
+      { name: "Skip Off-Topic Music Segments", value: "enableSponsorBlockMusicOfftopic" },
+      { name: "Shorts", icon: "YOUTUBE_SHORTS_FILL_24", value: "enableShorts" }
     ];
 
-    const buttons = [];
+    var buttons = [];
+    var index = 0;
 
-    let index = 0;
-    for (const setting of settings) {
-      const currentVal = setting.value ? configRead(setting.value) : null;
+    for (var i = 0; i < settings.length; i++) {
+      var setting = settings[i];
+      var currentVal = setting.value ? configRead(setting.value) : null;
+
       buttons.push(
         buttonItem(
           { title: setting.name, subtitle: setting.subtitle },
           {
             icon: setting.icon ? setting.icon : "CHEVRON_DOWN",
-            secondaryIcon:
-              currentVal === null
-                ? "CHEVRON_RIGHT"
-                : currentVal
-                ? "CHECK_BOX"
-                : "CHECK_BOX_OUTLINE_BLANK",
+            secondaryIcon: currentVal === null
+              ? "CHEVRON_RIGHT"
+              : currentVal
+              ? "CHECK_BOX"
+              : "CHECK_BOX_OUTLINE_BLANK"
           },
           currentVal !== null
             ? [
@@ -363,19 +218,19 @@
                     settingDatas: [
                       {
                         clientSettingEnum: {
-                          item: setting.value,
+                          item: setting.value
                         },
-                        boolValue: !configRead(setting.value),
-                      },
-                    ],
-                  },
+                        boolValue: !configRead(setting.value)
+                      }
+                    ]
+                  }
                 },
                 {
                   customAction: {
                     action: "SETTINGS_UPDATE",
-                    parameters: [index],
-                  },
-                },
+                    parameters: [index]
+                  }
+                }
               ]
             : [
                 {
@@ -384,10 +239,10 @@
                     parameters: {
                       options: setting.options,
                       selectedIndex: 0,
-                      update: false,
-                    },
-                  },
-                },
+                      update: false
+                    }
+                  }
+                }
               ]
         )
       );
@@ -404,10 +259,7 @@
   };
 
   function resolveCommand(cmd, _) {
-    // resolveCommand function is pretty OP, it can do from opening modals, changing client settings and way more.
-    // Because the client might change, we should find it first.
-
-    for (const key in window._yttv) {
+    for (var key in window._yttv) {
       if (
         window._yttv[key] &&
         window._yttv[key].instance &&
@@ -418,46 +270,41 @@
     }
   }
 
-  // Patch resolveCommand to be able to change NotubeTv settings
-
   function patchResolveCommand() {
-    for (const key in window._yttv) {
+    for (var key in window._yttv) {
       if (
         window._yttv[key] &&
         window._yttv[key].instance &&
         window._yttv[key].instance.resolveCommand
       ) {
-        const ogResolve = window._yttv[key].instance.resolveCommand;
+        var ogResolve = window._yttv[key].instance.resolveCommand;
         window._yttv[key].instance.resolveCommand = function (cmd, _) {
           if (cmd.setClientSettingEndpoint) {
-            // Command to change client settings. Use NotubeTv configuration to change settings.
-            for (const settings of cmd.setClientSettingEndpoint.settingDatas) {
-              if (!settings.clientSettingEnum.item.includes("_")) {
-                for (const setting of cmd.setClientSettingEndpoint
-                  .settingDatas) {
-                  const valName = Object.keys(setting).find((key) =>
-                    key.includes("Value")
-                  );
-                  const value =
-                    valName === "intValue"
-                      ? Number(setting[valName])
-                      : setting[valName];
-                  if (valName === "arrayValue") {
-                    const arr = configRead(setting.clientSettingEnum.item);
-                    if (arr.includes(value)) {
-                      arr.splice(arr.indexOf(value), 1);
-                    } else {
-                      arr.push(value);
-                    }
-                    configWrite(setting.clientSettingEnum.item, arr);
-                  } else configWrite(setting.clientSettingEnum.item, value);
+            for (var j = 0; j < cmd.setClientSettingEndpoint.settingDatas.length; j++) {
+              var setting = cmd.setClientSettingEndpoint.settingDatas[j];
+              var valName = Object.keys(setting).filter(function (key) {
+                return key.includes("Value");
+              })[0];
+              var value =
+                valName === "intValue"
+                  ? Number(setting[valName])
+                  : setting[valName];
+              if (valName === "arrayValue") {
+                var arr = configRead(setting.clientSettingEnum.item);
+                if (arr.indexOf(value) !== -1) {
+                  arr.splice(arr.indexOf(value), 1);
+                } else {
+                  arr.push(value);
                 }
+                configWrite(setting.clientSettingEnum.item, arr);
+              } else {
+                configWrite(setting.clientSettingEnum.item, value);
               }
             }
           } else if (cmd.customAction) {
             customAction(cmd.customAction.action, cmd.customAction.parameters);
             return true;
-          } else if (cmd?.showEngagementPanelEndpoint?.customAction) {
+          } else if (cmd.showEngagementPanelEndpoint && cmd.showEngagementPanelEndpoint.customAction) {
             customAction(
               cmd.showEngagementPanelEndpoint.customAction.action,
               cmd.showEngagementPanelEndpoint.customAction.parameters
@@ -476,103 +323,99 @@
         modernUI(true, parameters);
         break;
       case "SKIP":
-        const video = document.querySelector("video");
+        var video = document.querySelector("video");
         if (video) {
           video.currentTime = parameters.time;
         }
         resolveCommand({
           signalAction: {
-            signal: "POPUP_BACK",
-          },
+            signal: "POPUP_BACK"
+          }
         });
         break;
     }
   }
 
-  /**
-   * This is a minimal reimplementation of the following uBlock Origin rule:
-   * https://github.com/uBlockOrigin/uAssets/blob/3497eebd440f4871830b9b45af0afc406c6eb593/filters/filters.txt#L116
-   *
-   * This in turn calls the following snippet:
-   * https://github.com/gorhill/uBlock/blob/bfdc81e9e400f7b78b2abc97576c3d7bf3a11a0b/assets/resources/scriptlets.js#L365-L470
-   *
-   * Seems like for now dropping just the adPlacements is enough for YouTube TV
-   */
-  const origParse = JSON.parse;
+  var origParse = JSON.parse;
   JSON.parse = function () {
-    const r = origParse.apply(this, arguments);
+    var r = origParse.apply(this, arguments);
+
     if (r.adPlacements && configRead("enableAdBlock")) {
       r.adPlacements = [];
     }
 
-    // Also set playerAds to false, just incase.
     if (r.playerAds && configRead("enableAdBlock")) {
       r.playerAds = false;
     }
 
-    // Also set adSlots to an empty array, emptying only the adPlacements won't work.
     if (r.adSlots && configRead("enableAdBlock")) {
       r.adSlots = [];
     }
 
-    // Drop "masthead" ad from home screen
     if (
-      r?.contents?.tvBrowseRenderer?.content?.tvSurfaceContentRenderer?.content
-        ?.sectionListRenderer?.contents &&
+      r.contents &&
+      r.contents.tvBrowseRenderer &&
+      r.contents.tvBrowseRenderer.content &&
+      r.contents.tvBrowseRenderer.content.tvSurfaceContentRenderer &&
+      r.contents.tvBrowseRenderer.content.tvSurfaceContentRenderer.content &&
+      r.contents.tvBrowseRenderer.content.tvSurfaceContentRenderer.content.sectionListRenderer &&
+      r.contents.tvBrowseRenderer.content.tvSurfaceContentRenderer.content.sectionListRenderer.contents &&
       configRead("enableAdBlock")
     ) {
-      r.contents.tvBrowseRenderer.content.tvSurfaceContentRenderer.content.sectionListRenderer.contents =
-        r.contents.tvBrowseRenderer.content.tvSurfaceContentRenderer.content.sectionListRenderer.contents.filter(
-          (elm) => !elm.adSlotRenderer
-        );
+      var s =
+        r.contents.tvBrowseRenderer.content.tvSurfaceContentRenderer.content
+          .sectionListRenderer.contents[0];
+      s.shelfRenderer.content.horizontalListRenderer.items =
+        s.shelfRenderer.content.horizontalListRenderer.items.filter(function (
+          i
+        ) {
+          return !i.adSlotRenderer;
+        });
     }
 
     if (
       !configRead("enableShorts") &&
-      r?.contents?.tvBrowseRenderer?.content?.tvSurfaceContentRenderer?.content
+      r.contents &&
+      r.contents.tvBrowseRenderer &&
+      r.contents.tvBrowseRenderer.content &&
+      r.contents.tvBrowseRenderer.content.tvSurfaceContentRenderer &&
+      r.contents.tvBrowseRenderer.content.tvSurfaceContentRenderer.content
     ) {
       r.contents.tvBrowseRenderer.content.tvSurfaceContentRenderer.content.sectionListRenderer.contents =
         r.contents.tvBrowseRenderer.content.tvSurfaceContentRenderer.content.sectionListRenderer.contents.filter(
-          (shelve) =>
-            shelve.shelfRenderer?.tvhtml5ShelfRendererType !==
-            "TVHTML5_SHELF_RENDERER_TYPE_SHORTS"
+          function (shelve) {
+            return (
+              shelve.shelfRenderer.tvhtml5ShelfRendererType !==
+              "TVHTML5_SHELF_RENDERER_TYPE_SHORTS"
+            );
+          }
         );
     }
 
     return r;
   };
 
-
-  // The tiny-sha256 module, edited to export itself.
-  var sha256 = function sha256(ascii) {
+  // SHA-256 implementation (compatible with ES5)
+  var sha256 = function (ascii) {
     function rightRotate(value, amount) {
       return (value >>> amount) | (value << (32 - amount));
     }
+
     var mathPow = Math.pow;
     var maxWord = mathPow(2, 32);
     var lengthProperty = "length";
-    var i, j; // Used as a counter across the whole file
     var result = "";
-
     var words = [];
     var asciiBitLength = ascii[lengthProperty] * 8;
 
-    //* caching results is optional - remove/add slash from front of this line to toggle
-    // Initial hash value: first 32 bits of the fractional parts of the square roots of the first 8 primes
-    // (we actually calculate the first 64, but extra values are just ignored)
     var hash = (sha256.h = sha256.h || []);
-    // Round constants: first 32 bits of the fractional parts of the cube roots of the first 64 primes
     var k = (sha256.k = sha256.k || []);
     var primeCounter = k[lengthProperty];
-    /*/
-        var hash = [], k = [];
-        var primeCounter = 0;
-        //*/
 
     var isComposite = {};
     for (var candidate = 2; primeCounter < 64; candidate++) {
       if (!isComposite[candidate]) {
-        for (i = 0; i < 313; i += candidate) {
+        for (var i = 0; i < 313; i += candidate) {
           isComposite[i] = candidate;
         }
         hash[primeCounter] = (mathPow(candidate, 0.5) * maxWord) | 0;
@@ -580,413 +423,467 @@
       }
     }
 
-    ascii += "\x80"; // Append '1' bit (plus zero padding)
-    while ((ascii[lengthProperty] % 64) - 56) ascii += "\x00"; // More zero padding
+    ascii += "\x80";
+    while ((ascii[lengthProperty] % 64) - 56) ascii += "\x00";
     for (i = 0; i < ascii[lengthProperty]; i++) {
-      j = ascii.charCodeAt(i);
-      if (j >> 8) return; // ASCII check: only accept characters in range 0-255
+      var j = ascii.charCodeAt(i);
+      if (j >> 8) return;
       words[i >> 2] |= j << (((3 - i) % 4) * 8);
     }
     words[words[lengthProperty]] = (asciiBitLength / maxWord) | 0;
     words[words[lengthProperty]] = asciiBitLength;
 
-    // process each chunk
-    for (j = 0; j < words[lengthProperty]; ) {
-      var w = words.slice(j, (j += 16)); // The message is expanded into 64 words as part of the iteration
+    for (var j = 0; j < words[lengthProperty]; ) {
+      var w = words.slice(j, (j += 16));
       var oldHash = hash;
-      // This is now the "working hash", often labelled as variables a...g
-      // (we have to truncate as well, otherwise extra entries at the end accumulate
       hash = hash.slice(0, 8);
 
-      for (i = 0; i < 64; i++) {
-        // Expand the message into 64 words
-        // Used below if
+      for (var i = 0; i < 64; i++) {
         var w15 = w[i - 15],
           w2 = w[i - 2];
 
-        // Iterate
         var a = hash[0],
           e = hash[4];
+
         var temp1 =
           hash[7] +
-          (rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25)) + // S1
-          ((e & hash[5]) ^ (~e & hash[6])) + // ch
+          (rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25)) +
+          ((e & hash[5]) ^ (~e & hash[6])) +
           k[i] +
-          // Expand the message schedule if needed
           (w[i] =
             i < 16
               ? w[i]
               : (w[i - 16] +
-                  (rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ (w15 >>> 3)) + // s0
+                  (rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ (w15 >>> 3)) +
                   w[i - 7] +
-                  (rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ (w2 >>> 10))) | // s1
+                  (rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ (w2 >>> 10))) |
                 0);
-        // This is only used once, so *could* be moved below, but it only saves 4 bytes and makes things unreadble
-        var temp2 =
-          (rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22)) + // S0
-          ((a & hash[1]) ^ (a & hash[2]) ^ (hash[1] & hash[2])); // maj
 
-        hash = [(temp1 + temp2) | 0].concat(hash); // We don't bother trimming off the extra ones, they're harmless as long as we're truncating when we do the slice()
+        var temp2 =
+          (rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22)) +
+          ((a & hash[1]) ^ (a & hash[2]) ^ (hash[1] & hash[2]));
+
+        hash = [(temp1 + temp2) | 0].concat(hash);
         hash[4] = (hash[4] + temp1) | 0;
       }
 
-      for (i = 0; i < 8; i++) {
+      for (var i = 0; i < 8; i++) {
         hash[i] = (hash[i] + oldHash[i]) | 0;
       }
     }
 
-    for (i = 0; i < 8; i++) {
-      for (j = 3; j + 1; j--) {
+    for (var i = 0; i < 8; i++) {
+      for (var j = 3; j + 1; j--) {
         var b = (hash[i] >> (j * 8)) & 255;
-        result += (b < 16 ? 0 : "") + b.toString(16);
+        result += (b < 16 ? "0" : "") + b.toString(16);
       }
     }
+
     return result;
   };
 
-  // Copied from https://github.com/ajayyy/SponsorBlock/blob/9392d16617d2d48abb6125c00e2ff6042cb7bebe/src/config.ts#L179-L233
-  const barTypes = {
-    sponsor: {
-      color: "#00d400",
-      opacity: "0.7",
-      name: "sponsored segment",
-    },
-    intro: {
-      color: "#00ffff",
-      opacity: "0.7",
-      name: "intro",
-    },
-    outro: {
-      color: "#0202ed",
-      opacity: "0.7",
-      name: "outro",
-    },
-    interaction: {
-      color: "#cc00ff",
-      opacity: "0.7",
-      name: "interaction reminder",
-    },
-    selfpromo: {
-      color: "#ffff00",
-      opacity: "0.7",
-      name: "self-promotion",
-    },
-    music_offtopic: {
-      color: "#ff9900",
-      opacity: "0.7",
-      name: "non-music part",
-    },
-  };
-
-  const sponsorblockAPI = "https://api.sponsor.ajay.app/api";
-
-  class SponsorBlockHandler {
-    video = null;
-    active = true;
-
-    attachVideoTimeout = null;
-    nextSkipTimeout = null;
-    sliderInterval = null;
-
-    observer = null;
-    scheduleSkipHandler = null;
-    durationChangeHandler = null;
-    segments = null;
-    skippableCategories = [];
-    manualSkippableCategories = [];
-
-    constructor(videoID) {
-      this.videoID = videoID;
-    }
-
-    async init() {
-      if (!configRead("enableSponsorBlock")) return;
-
-      const videoHash = sha256(this.videoID).substring(0, 4);
-      const categories = [
-        "sponsor",
-        "intro",
-        "outro",
-        "interaction",
-        "selfpromo",
-        "music_offtopic",
-      ];
-
-      const resp = await new Promise((resolve) => {
-        window.onNetworkBridgeResponse = (jsonString) => resolve(jsonString);
-        NetworkBridge.fetch(
-          `${sponsorblockAPI}/skipSegments/${videoHash}?categories=${encodeURIComponent(
-            JSON.stringify(categories)
-          )}`,
-          this.videoID
-        );
-      });
-
-      const result = JSON.parse(resp);
-
-      if (!result || !result.segments || !result.segments.length) {
-        return;
-      }
-
-      this.segments = result.segments;
-      this.manualSkippableCategories = configRead("sponsorBlockManualSkips");
-      this.skippableCategories = this.getSkippableCategories();
-
-      this.scheduleSkipHandler = () => this.scheduleSkip();
-      this.durationChangeHandler = () => this.buildOverlay();
-
-      this.attachVideo();
-      this.buildOverlay();
-    }
-
-    getSkippableCategories() {
-      const skippableCategories = [];
-      if (configRead("enableSponsorBlockSponsor")) {
-        skippableCategories.push("sponsor");
-      }
-      if (configRead("enableSponsorBlockIntro")) {
-        skippableCategories.push("intro");
-      }
-      if (configRead("enableSponsorBlockOutro")) {
-        skippableCategories.push("outro");
-      }
-      if (configRead("enableSponsorBlockInteraction")) {
-        skippableCategories.push("interaction");
-      }
-      if (configRead("enableSponsorBlockSelfPromo")) {
-        skippableCategories.push("selfpromo");
-      }
-      if (configRead("enableSponsorBlockMusicOfftopic")) {
-        skippableCategories.push("music_offtopic");
-      }
-      return skippableCategories;
-    }
-
-    attachVideo() {
-      clearTimeout(this.attachVideoTimeout);
-      this.attachVideoTimeout = null;
-
-      this.video = document.querySelector("video");
-      if (!this.video) {
-        this.attachVideoTimeout = setTimeout(() => this.attachVideo(), 100);
-        return;
-      }
-
-      this.video.addEventListener("play", this.scheduleSkipHandler);
-      this.video.addEventListener("durationchange", this.durationChangeHandler);
-    }
-
-    buildOverlay() {
-      if (this.segmentsoverlay) {
-        return;
-      }
-
-      if (!this.video || !this.video.duration) {
-        return;
-      }
-
-      const videoDuration = this.video.duration;
-
-      this.segmentsoverlay = document.createElement("div");
-      this.segments.forEach((segment) => {
-        const [start, end] = segment.segment;
-        const barType = barTypes[segment.category] || {
-          color: "blue",
-          opacity: 0.7,
-        };
-        const transform = `translateX(${
-          (start / videoDuration) * 100.0
-        }%) scaleX(${(end - start) / videoDuration})`;
-        const elm = document.createElement("div");
-        elm.classList.add("ytLrProgressBarPlayed");
-        elm.style["background"] = barType.color;
-        elm.style["opacity"] = barType.opacity;
-        elm.style["-webkit-transform"] = transform;
-        this.segmentsoverlay.appendChild(elm);
-      });
-
-      this.observer = new MutationObserver((mutations) => {
-        mutations.forEach((m) => {
-          if (m.removedNodes) {
-            for (const node of m.removedNodes) {
-              if (node === this.segmentsoverlay) {
-                this.slider.appendChild(this.segmentsoverlay);
-              }
-            }
-          }
-        });
-      });
-
-      this.sliderInterval = setInterval(() => {
-        this.slider = document.querySelector('[idomkey="slider"]');
-        if (this.slider) {
-          clearInterval(this.sliderInterval);
-          this.sliderInterval = null;
-          this.observer.observe(this.slider, {
-            childList: true,
-          });
-          this.slider.appendChild(this.segmentsoverlay);
-        }
-      }, 500);
-    }
-
-    scheduleSkip() {
-      clearTimeout(this.nextSkipTimeout);
-      this.nextSkipTimeout = null;
-
-      if (!this.active || this.video.paused) return;
-
-      const current = this.video.currentTime;
-
-      const nextSegments = this.segments
-        .filter((seg) => seg.segment[0] >= current - 0.2)
-        .sort((a, b) => a.segment[0] - b.segment[0]);
-
-      if (!nextSegments.length) return;
-
-      const [segment] = nextSegments;
-      const [start, end] = segment.segment;
-
-      if (current >= end) return;
-
-      const delay = Math.max(0, (start - current) * 1000);
-
-      this.nextSkipTimeout = setTimeout(() => {
-        if (this.video.paused) return;
-        if (!this.skippableCategories.includes(segment.category)) return;
-
-        const skipName = barTypes[segment.category]?.name || segment.category;
-        if (!this.manualSkippableCategories.includes(segment.category)) {
-          showToast("SponsorBlock", `Skipping ${skipName}`);
-          this.video.currentTime = end;
-          this.scheduleSkip();
-        }
-      }, delay);
-    }
-
-    destroy() {
-      this.active = false;
-      this.segments = null;
-
-      if (this.nextSkipTimeout) {
-        clearTimeout(this.nextSkipTimeout);
-        this.nextSkipTimeout = null;
-      }
-
-      if (this.attachVideoTimeout) {
-        clearTimeout(this.attachVideoTimeout);
-        this.attachVideoTimeout = null;
-      }
-
-      if (this.sliderInterval) {
-        clearInterval(this.sliderInterval);
-        this.sliderInterval = null;
-      }
-
-      if (this.observer) {
-        this.observer.disconnect();
-        this.observer = null;
-      }
-
-      if (this.segmentsoverlay) {
-        this.segmentsoverlay.remove();
-        this.segmentsoverlay = null;
-      }
-
-      if (this.video) {
-        this.video.removeEventListener("play", this.scheduleSkipHandler);
-        this.video.removeEventListener(
-          "durationchange",
-          this.durationChangeHandler
-        );
-      }
-    }
+  // SponsorBlockHandler emulation (updated)
+  function SponsorBlockHandler(videoID) {
+    this.videoID = videoID;
+    this.segments = null;
+    this.skippableCategories = [];
+    this.manualSkippableCategories = [];
+    this.active = true;
+    this.nextSkipTimeout = null;
+    this.sliderInterval = null;
+    this.observer = null;
+    this.segmentsoverlay = null;
+    this.video = null;
+    this.scheduleSkipHandler = null;
+    this.durationChangeHandler = null;
+    this.slider = null;
   }
 
-  // When this global variable was declared using let and two consecutive hashchange
-  // events were fired (due to bubbling? not sure...) the second call handled below
-  // would not see the value change from first call, and that would cause multiple
-  // SponsorBlockHandler initializations... This has been noticed on Chromium 38.
-  // This either reveals some bug in chromium/webpack/babel scope handling, or
-  // shows my lack of understanding of javascript. (or both)
+  SponsorBlockHandler.prototype.init = function () {
+    var self = this;
+    if (!configRead("enableSponsorBlock")) return;
 
-  window.sponsorblock = null;
+    var videoHash = sha256(this.videoID).substring(0, 4);
+    var categories = ["sponsor", "intro", "outro", "interaction", "selfpromo", "preview", "filler", "music_offtopic"];
+    var requestUrl = "https://sponsorblock.inf.re/api/skipSegments/" + videoHash + "?categories=" + encodeURIComponent(JSON.stringify(categories));
 
-  window.addEventListener(
-    "hashchange",
-    () => {
-      if (!configRead("enableSponsorBlock")) return;
-      const match = location.hash.match(/[?&]v=([^&]+)/);
-      const videoID = match ? match[1] : null;
-      if (!videoID) return;
-      const needsReload =
-        !window.sponsorblock || window.sponsorblock.videoID != videoID;
+    fetchPolyfill(requestUrl, function (respText) {
+      try {
+        var results = JSON.parse(respText);
+        var result = null;
 
-      if (needsReload) {
-        if (window.sponsorblock) {
-          try {
-            window.sponsorblock.destroy();
-          } catch (err) {}
-          window.sponsorblock = null;
+        if (Object.prototype.toString.call(results) === "[object Array]") {
+          for (var i = 0; i < results.length; i++) {
+            if (results[i] && results[i].videoID === self.videoID) {
+              result = results[i];
+              break;
+            }
+          }
+        } else if (results && results.segments) {
+          result = results;
         }
 
-        window.sponsorblock = new SponsorBlockHandler(videoID);
-        window.sponsorblock.init();
+        if (!result || !result.segments || !result.segments.length) {
+          // no segments found
+          return;
+        }
+
+        self.segments = result.segments;
+        self.manualSkippableCategories = configRead("sponsorBlockManualSkips");
+        self.skippableCategories = self.getSkippableCategories();
+
+        self.scheduleSkipHandler = function () { self.scheduleSkip(); };
+        self.durationChangeHandler = function () { self.buildOverlay(); };
+
+        self.attachVideo();
+        self.buildOverlay();
+      } catch (e) {
+        console.warn("SponsorBlock JSON parse error:", e);
       }
-    },
-    false
-  );
+    });
+  };
 
-  /*global navigate*/
+  SponsorBlockHandler.prototype.getSkippableCategories = function () {
+    var skippable = [];
+    if (configRead("enableSponsorBlockSponsor")) skippable.push("sponsor");
+    if (configRead("enableSponsorBlockIntro")) skippable.push("intro");
+    if (configRead("enableSponsorBlockOutro")) skippable.push("outro");
+    if (configRead("enableSponsorBlockInteraction")) skippable.push("interaction");
+    if (configRead("enableSponsorBlockSelfPromo")) skippable.push("selfpromo");
+    if (configRead("enableSponsorBlockPreview")) skippable.push("preview");
+    if (configRead("enableSponsorBlockFiller")) skippable.push("filler");
+    if (configRead("enableSponsorBlockMusicOfftopic")) skippable.push("music_offtopic");
+    return skippable;
+  };
 
-  // It just works, okay?
-  const interval$1 = setInterval(() => {
-    const videoElement = document.querySelector("video");
+  SponsorBlockHandler.prototype.attachVideo = function () {
+    var self = this;
+    this.video = document.querySelector("video");
+    if (!this.video) {
+      this.attachVideoTimeout = setTimeout(function () { self.attachVideo(); }, 100);
+      return;
+    }
+
+    // Ensure handlers exist
+    if (!this.scheduleSkipHandler) {
+      var that = this;
+      this.scheduleSkipHandler = function () { that.scheduleSkip(); };
+    }
+    if (!this.durationChangeHandler) {
+      var that2 = this;
+      this.durationChangeHandler = function () { that2.buildOverlay(); };
+    }
+
+    this.video.addEventListener("play", this.scheduleSkipHandler);
+    this.video.addEventListener("pause", this.scheduleSkipHandler);
+    this.video.addEventListener("timeupdate", this.scheduleSkipHandler);
+    this.video.addEventListener("durationchange", this.durationChangeHandler);
+  };
+
+  SponsorBlockHandler.prototype.buildOverlay = function () {
+    if (this.segmentsoverlay) return;
+    if (!this.video || !this.video.duration) return;
+
+    var videoDuration = this.video.duration;
+    this.segmentsoverlay = document.createElement("div");
+    this.segmentsoverlay.className = "ytLrProgressBarHost ytLrProgressBarFocused ytLrWatchDefaultProgressBar";
+
+    var sliderElement = document.createElement("div");
+    sliderElement.style.backgroundColor = "rgba(0,0,0,0)";
+    sliderElement.style.bottom = "auto";
+    sliderElement.style.height = "4px";
+    sliderElement.style.overflow = "hidden";
+    sliderElement.style.position = "absolute";
+    sliderElement.style.top = "26px";
+    sliderElement.style.width = "100%";
+    this.segmentsoverlay.appendChild(sliderElement);
+
+    var self = this;
+    for (var i = 0; i < this.segments.length; i++) {
+      var segment = this.segments[i];
+      var start = segment.segment[0];
+      var end = segment.segment[1];
+      var barType = (barTypes[segment.category] && barTypes[segment.category]) || { color: "blue", opacity: 0.7 };
+      var transform = "translateX(" + ((start / videoDuration) * 100.0) + "%) scaleX(" + ((end - start) / videoDuration) + ")";
+      var elm = document.createElement("div");
+      elm.className = "ytLrProgressBarPlayed";
+      elm.style.background = barType.color;
+      elm.style.opacity = barType.opacity;
+      elm.style.transform = transform;
+      elm.style.webkitTransform = transform;
+      elm.style.height = "100%";
+      elm.style.pointerEvents = "none";
+      elm.style.position = "absolute";
+      elm.style.transformOrigin = "left";
+      elm.style.width = "100%";
+      sliderElement.appendChild(elm);
+    }
+
+    var self2 = this;
+    this.sliderInterval = setInterval(function () {
+      self2.slider = document.querySelector('[idomkey="slider"]') || document.querySelector("ytlr-redux-connect-ytlr-progress-bar") || document.querySelector("ytlr-progress-bar");
+      if (self2.slider) {
+        clearInterval(self2.sliderInterval);
+        self2.sliderInterval = null;
+        try {
+          self2.slider.appendChild(self2.segmentsoverlay);
+        } catch (e) {
+          console.warn("Failed to append sponsor overlay:", e);
+        }
+      }
+    }, 500);
+  };
+
+  SponsorBlockHandler.prototype.scheduleSkip = function () {
+    var self = this;
+    if (this.nextSkipTimeout) {
+      clearTimeout(this.nextSkipTimeout);
+      this.nextSkipTimeout = null;
+    }
+
+    if (!this.active) return;
+    if (!this.video || this.video.paused) return;
+    if (!this.segments || !this.segments.length) return;
+
+    var current = this.video.currentTime;
+    var nextSegments = this.segments.filter(function (seg) {
+      return seg.segment[0] >= current - 0.3 && seg.segment[1] > current - 0.3;
+    }).sort(function (a, b) { return a.segment[0] - b.segment[0]; });
+
+    if (!nextSegments || !nextSegments.length) return;
+
+    var segment = nextSegments[0];
+    var start = segment.segment[0];
+    var end = segment.segment[1];
+
+    var delay = (start - this.video.currentTime) * 1000;
+    if (delay < 0) delay = 0;
+
+    this.nextSkipTimeout = setTimeout(function () {
+      if (self.video.paused) return;
+      if (self.skippableCategories.indexOf(segment.category) === -1) return;
+
+      var skipName = (barTypes[segment.category] && barTypes[segment.category].name) || segment.category;
+      if (self.manualSkippableCategories.indexOf(segment.category) === -1) {
+        showToast("SponsorBlock", "Skipping " + skipName);
+        try {
+          self.video.currentTime = end + 0.1;
+        } catch (e) {
+          console.warn("Failed to set currentTime:", e);
+        }
+        self.scheduleSkip();
+      }
+    }, delay);
+  };
+
+  SponsorBlockHandler.prototype.destroy = function () {
+    this.active = false;
+    if (this.nextSkipTimeout) {
+      clearTimeout(this.nextSkipTimeout);
+      this.nextSkipTimeout = null;
+    }
+    if (this.attachVideoTimeout) {
+      clearTimeout(this.attachVideoTimeout);
+      this.attachVideoTimeout = null;
+    }
+    if (this.sliderInterval) {
+      clearInterval(this.sliderInterval);
+      this.sliderInterval = null;
+    }
+    if (this.observer) {
+      try { this.observer.disconnect(); } catch (e) {}
+      this.observer = null;
+    }
+    if (this.segmentsoverlay) {
+      try { this.segmentsoverlay.remove(); } catch (e) {}
+      this.segmentsoverlay = null;
+    }
+    if (this.video) {
+      try {
+        if (this.scheduleSkipHandler) this.video.removeEventListener("play", this.scheduleSkipHandler);
+        if (this.scheduleSkipHandler) this.video.removeEventListener("pause", this.scheduleSkipHandler);
+        if (this.scheduleSkipHandler) this.video.removeEventListener("timeupdate", this.scheduleSkipHandler);
+        if (this.durationChangeHandler) this.video.removeEventListener("durationchange", this.durationChangeHandler);
+      } catch (e) {}
+    }
+  };
+
+  // Polyfill fetch()
+  function fetchPolyfill(url, callback) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", url, true);
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState == 4 && xhr.status == 200) {
+        callback(xhr.responseText);
+      }
+    };
+    xhr.send();
+  }
+
+  // Handle hash change
+  window.sponsorblock = null;
+  window.addEventListener("hashchange", function () {
+    if (!configRead("enableSponsorBlock")) {
+      if (window.sponsorblock) window.sponsorblock.destroy();
+      return;
+    }
+    var match = location.hash.match(/[?&]v=([^&]+)/);
+    var videoID = match ? match[1] : null;
+    if (!videoID) return;
+    if (!window.sponsorblock || window.sponsorblock.videoID != videoID) {
+      if (window.sponsorblock) window.sponsorblock.destroy();
+      window.sponsorblock = new SponsorBlockHandler(videoID);
+      window.sponsorblock.init();
+    }
+  });
+
+  // DOM Loaded handler
+  var interval = setInterval(function () {
+    var videoElement = document.querySelector("video");
     if (videoElement) {
-      execute_once_dom_loaded();
+      executeOnceDomLoaded();
       patchResolveCommand();
-      clearInterval(interval$1);
+      clearInterval(interval);
     }
   }, 250);
 
-  function execute_once_dom_loaded() {
-    // Add CSS to head.
+  function executeOnceDomLoaded() {
+    // Inject CSS
+    var css = ".ytaf-ui-container{position:absolute;top:10%;left:10%;right:10%;bottom:10%;background:rgba(0,0,0,0.8);color:white;border-radius:20px;padding:20px;font-size:1.5rem;z-index:1000}.ytaf-notification-container{position:absolute;right:10px;bottom:10px;font-size:16pt;z-index:1200}.ytaf-notification-container .message{background:rgba(0,0,0,0.7);color:white;padding:1em;margin:0.5em;transition:all .3s ease-in-out;opacity:1;line-height:1;border-right:10px solid rgba(50,255,50,0.3);display:inline-block;float:right}.ytaf-notification-container .message-hidden{opacity:0;margin:0;padding:0;line-height:0}";
+    var style = document.createElement("style");
+    style.textContent = css;
+    document.head.appendChild(style);
+  }
 
-    var css_248z =
-      ".ytaf-ui-container {\n  position: absolute;\n  top: 10%;\n  left: 10%;\n  right: 10%;\n  bottom: 10%;\n\n  background: rgba(0, 0, 0, 0.8);\n  color: white;\n  border-radius: 20px;\n  padding: 20px;\n  font-size: 1.5rem;\n  z-index: 1000;\n}\n\n.ytaf-ui-container :focus {\n  outline: 4px red solid;\n}\n\n.ytaf-ui-container h1 {\n  margin: 0;\n  margin-bottom: 0.5em;\n  text-align: center;\n}\n\n.ytaf-ui-container input[type='checkbox'] {\n  width: 1.4rem;\n  height: 1.4rem;\n}\n\n.ytaf-ui-container input[type='radio'] {\n  width: 1.4rem;\n  height: 1.4rem;\n}\n\n.ytaf-ui-container label {\n  display: block;\n  font-size: 1.4rem;\n}\n\n.ytaf-notification-container {\n  position: absolute;\n  right: 10px;\n  bottom: 10px;\n  font-size: 16pt;\n  z-index: 1200;\n}\n\n.ytaf-notification-container .message {\n  background: rgba(0, 0, 0, 0.7);\n  color: white;\n  padding: 1em;\n  margin: 0.5em;\n  transition: all 0.3s ease-in-out;\n  opacity: 1;\n  line-height: 1;\n  border-right: 10px solid rgba(50, 255, 50, 0.3);\n  display: inline-block;\n  float: right;\n}\n\n.ytaf-notification-container .message-hidden {\n  opacity: 0;\n  margin: 0 0.5em;\n  padding: 0 1em;\n  line-height: 0;\n}\n\n/* Fixes transparency effect for the video player */\n\n.ytLrWatchDefaultShadow {\n  background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0) 0, rgba(0, 0, 0, 0.8) 90%) !important;\n  background-color: rgba(0, 0, 0, 0.3) !important;\n  display: block !important;\n  height: 100% !important;\n  pointer-events: none !important;\n  position: absolute !important;\n  width: 100% !important;\n}\n\n/* Fixes shorts having a black background */\n\n.ytLrTileHeaderRendererShorts {\n  background-image: none !important;\n}";
+  /* Exit Bridge */
+  (function () {
+    var observer = new MutationObserver(function () {
+      var exitButton = document.querySelector(".ytVirtualListItemLast ytlr-button.ytLrButtonLargeShape");
+      if (exitButton) {
+        exitButton.addEventListener("keydown", function (e) {
+          if ((e.key === "Enter" || e.keyCode === 13) && typeof ExitBridge !== "undefined" && typeof ExitBridge.onExitCalled === "function") {
+            e.preventDefault();
+            e.stopPropagation();
+            ExitBridge.onExitCalled();
+          }
+        }, true);
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+  })();
 
-    const existingStyle = document.querySelector("style[nonce]");
-    if (existingStyle) {
-      existingStyle.textContent += css_248z;
-    } else {
-      const style = document.createElement("style");
-      style.textContent = css_248z;
-      document.head.appendChild(style);
+  /* Menu Trigger */
+  (function () {
+    function getSearchBar() {
+      return document.querySelectorAll('[idomkey="ytLrSearchBarSearchTextBox"]')[0] || null;
     }
 
-    // We handle key events ourselves.
+    function addMenuButton() {
+      var searchBar = getSearchBar();
+      if (!searchBar) return;
+      var parent = searchBar.parentNode;
+      if (parent.querySelector('button[data-notubetv="menu"]')) return;
+      parent.style.display = "flex";
+      parent.style.flexDirection = "row";
+      parent.style.alignItems = "center";
+      var menuButton = document.createElement("button");
+      menuButton.setAttribute("data-notubetv", "menu");
+      menuButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" height="58px" viewBox="0 -960 960 960" width="58px" fill="#F3F3F3"><path d="M480-480q0-91 64.5-155.5T700-700q91 0 155.5 64.5T920-480H480ZM260-260q-91 0-155.5-64.5T40-480h440q0 91-64.5 155.5T260-260Zm220-220q-91 0-155.5-64.5T260-700q0-91 64.5-155.5T480-920v440Zm0 440v-440q91 0 155.5 64.5T700-260q0 91-64.5 155.5T480-40Z"/></svg>';
+      menuButton.style.marginLeft = "54px";
+      menuButton.style.padding = "35px";
+      menuButton.style.background = "rgba(255,255,255,0.1)";
+      menuButton.style.border = "none";
+      menuButton.style.borderRadius = "88px";
+      parent.insertBefore(menuButton, searchBar.nextSibling);
+    }
 
-    var uiContainer = document.createElement("div");
-    uiContainer.classList.add("ytaf-ui-container");
-    uiContainer.style["display"] = "none";
-    uiContainer.setAttribute("tabindex", 0);
+    addMenuButton();
 
-    uiContainer.addEventListener(
-      "keydown",
-      (evt) => {
-        if (evt.keyCode === 13 || evt.keyCode === 32) {
-          const focusedElement = document.querySelector(":focus");
-          if (focusedElement.type === "checkbox") {
-            focusedElement.checked = !focusedElement.checked;
-            focusedElement.dispatchEvent(new Event("change"));
-          }
-          evt.preventDefault();
-          evt.stopPropagation();
-          return;
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "ArrowRight") {
+        var searchBar = getSearchBar();
+        var isFocused = searchBar && searchBar.classList.contains("ytLrSearchTextBoxFocused");
+        if (isFocused && typeof modernUI === "function") {
+          modernUI();
         }
-      },
-      true
-    );
-  }
+      }
+    });
+
+    var observer = new MutationObserver(function () {
+      var searchBar = getSearchBar();
+      if (searchBar && !searchBar.parentNode.querySelector('[data-notubetv="menu"]')) {
+        addMenuButton();
+      }
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+  })();
 })();
 /* End TizenTubeScripts.js */
+
+/* Start antiBannerUnified.js */
+(function() {
+  // Daftar selector iklan yang ingin dihapus
+  var SELECTORS = [
+    "ytd-ad-slot-renderer",
+    "ytd-display-ad-renderer",
+    "ytd-promoted-sparkles-web-renderer",
+    "ytd-rich-section-renderer",
+    "ytd-banner-promo-renderer",
+    "#masthead-ad"
+  ];
+
+  // Fungsi hapus iklan
+  function removeAds() {
+    for (var i = 0; i < SELECTORS.length; i++) {
+      var els = document.querySelectorAll(SELECTORS[i]);
+      for (var j = 0; j < els.length; j++) {
+        try {
+          els[j].parentNode.removeChild(els[j]);
+        } catch(e) {}
+      }
+    }
+  }
+
+  // Observer untuk DOM dinamis (navigasi, scroll, rekomendasi baru)
+  function startObserver() {
+    try {
+      if (window._ytUnifiedAdObserverStarted) return;
+      window._ytUnifiedAdObserverStarted = true;
+      var observer = new MutationObserver(removeAds);
+      observer.observe(document.documentElement || document.body, {
+        childList: true,
+        subtree: true
+      });
+    } catch(e) {
+      console.warn("antiBannerUnified observer error:", e);
+    }
+  }
+
+  // Jalankan observer dan clean-up awal
+  function initAdRemover() {
+    removeAds();
+    startObserver();
+  }
+
+  // Eksekusi awal langsung
+  initAdRemover();
+
+  // Polling 5 detik pertama — tangkap iklan awal (termasuk “Selamat Datang Kembali”)
+  var initTries = 0;
+  var earlyPoll = setInterval(function() {
+    removeAds();
+    initTries++;
+    if (initTries > 10) clearInterval(earlyPoll);
+  }, 500);
+
+  // Re-run tiap kali URL berubah (SPA navigation)
+  var lastUrl = location.href;
+  setInterval(function() {
+    if (location.href !== lastUrl) {
+      lastUrl = location.href;
+      setTimeout(initAdRemover, 1500);
+    }
+  }, 1000);
+})();
+/* End antiBannerUnified.js */
