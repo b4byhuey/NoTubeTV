@@ -1,36 +1,3 @@
-/* Start stayActiveTVsafe.js */
-(function() {
-  // Pasang spoof visibility, ulang tiap 10 detik agar tidak di-override
-  function applyVisibilitySpoof() {
-    try {
-      Object.defineProperty(document, "hidden", { get: function() { return false; }, configurable: true });
-      Object.defineProperty(document, "visibilityState", { get: function() { return "visible"; }, configurable: true });
-    } catch(e) {}
-  }
-  applyVisibilitySpoof();
-  setInterval(applyVisibilitySpoof, 10000);
-
-  function simulateLightActivity() {
-    try {
-      var video = document.querySelector("video");
-      if (video) {
-        // Kirim event focus dan mousemove agar dianggap aktif
-        video.dispatchEvent(new Event("focus", { bubbles: true }));
-        video.dispatchEvent(new Event("mousemove", { bubbles: true }));
-      } else {
-        // fallback untuk halaman lain
-        document.dispatchEvent(new Event("mousemove", { bubbles: true }));
-      }
-    } catch(e) {}
-    // interval acak 60-90 detik
-    var next = 60000 + Math.random() * 30000;
-    setTimeout(simulateLightActivity, next);
-  }
-
-  simulateLightActivity();
-})();
-/* End stayActiveTVsafe.js */
-
 /* Start spoofViewport.js */
 (function () {
   var existing = document.querySelector('meta[name="viewport"]');
